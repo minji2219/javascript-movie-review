@@ -57,15 +57,20 @@ const Footer = () => {
   );
 };
 const $ = (selector, parent = document) => parent.querySelector(selector);
+const $multiSelect = (selector, parent = document) => selector.split(" ").map((s) => parent.querySelector(s));
 const $$ = (selector, parent = document) => Array.from(parent.querySelectorAll(selector));
-const Button = ({ text, className }) => {
-  const button = document.createElement("button");
-  button.classList.add(...className);
-  button.textContent = text;
+const Button = ({ text, className, onClick }) => {
+  const button = createElement(
+    /*html*/
+    `
+    <button class=${className.join(" ")}>${text}</button>
+  `
+  );
+  button.addEventListener("click", onClick);
   return button;
 };
 const Rate = ({ rate, className }) => {
-  const rateElement = createElement(
+  return createElement(
     /*html*/
     `
     <div class="rate">
@@ -74,7 +79,44 @@ const Rate = ({ rate, className }) => {
     </div>
     `
   );
-  return rateElement;
+};
+const OPTIONS = {
+  headers: {
+    Authorization: `Bearer ${"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmVlMGRmNTg4MWRkZTBlY2U4MWRjZjBmMzM1ZjBlNCIsIm5iZiI6MTY4MzUyMTgwOC42MzY5OTk4LCJzdWIiOiI2NDU4ODExMDZhYThlMDAxMWNhMGUwYWUiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.BE-oX0D433AdaMTVuBT1DJcadG3VUCorfMOeY90gDR4"}`,
+    accept: "application/json"
+  }
+};
+const fetchPopularMovieList = async (currentPage2) => {
+  try {
+    const url = `https://api.themoviedb.org/3/movie/popular?include_adult=false&language=ko-KR&page=${currentPage2}`;
+    const response = await fetch(url, OPTIONS);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    return { status: "success", data };
+  } catch (error) {
+    console.error("데이터 로드 실패:", error);
+    return { status: "fail", data: [] };
+  }
+};
+const fetchSearchMovieList = async (search, currentPage2) => {
+  try {
+    const url = `https://api.themoviedb.org/3/search/movie?query=${search}&include_adult=false&language=ko-KR&page=${currentPage2}`;
+    const response = await fetch(url, OPTIONS);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    return { status: "success", data };
+  } catch (error) {
+    console.error("검색 데이터 로드 실패:", error);
+    return { status: "fail", data: [] };
+  }
+};
+const hideSkeleton = () => {
+  var _a;
+  (_a = $$(".skeleton")) == null ? void 0 : _a.forEach((s) => s.remove());
 };
 const SkeletonMovieItem = () => {
   return createElement(
@@ -95,56 +137,11 @@ const SkeletonMovieItem = () => {
   `
   );
 };
-const OPTIONS = {
-  headers: {
-    Authorization: `Bearer ${"eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjNmVlMGRmNTg4MWRkZTBlY2U4MWRjZjBmMzM1ZjBlNCIsIm5iZiI6MTY4MzUyMTgwOC42MzY5OTk4LCJzdWIiOiI2NDU4ODExMDZhYThlMDAxMWNhMGUwYWUiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.BE-oX0D433AdaMTVuBT1DJcadG3VUCorfMOeY90gDR4"}`,
-    accept: "application/json"
-  }
-};
 const showSkeleton = (count = 20) => {
   const container = $(".thumbnail-list");
-  if (!container) return;
-  for (let i = 0; i < count; i++) {
-    container.appendChild(SkeletonMovieItem());
-  }
-};
-const hideSkeleton = () => {
-  var _a;
-  (_a = $$(".skeleton")) == null ? void 0 : _a.forEach((s) => s.remove());
-};
-const fetchPopularMovieList = async (currentPage2) => {
-  showSkeleton();
-  try {
-    const url = `https://api.themoviedb.org/3/movie/popular?include_adult=false&language=ko-KR&page=${currentPage2}`;
-    const response = await fetch(url, OPTIONS);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data = await response.json();
-    hideSkeleton();
-    return data;
-  } catch (error) {
-    console.error("데이터 로드 실패:", error);
-    hideSkeleton();
-    throw error;
-  }
-};
-const fetchSearchMovieList = async (search, currentPage2) => {
-  showSkeleton();
-  try {
-    const url = `https://api.themoviedb.org/3/search/movie?query=${search}&include_adult=false&language=ko-KR&page=${currentPage2}`;
-    const response = await fetch(url, OPTIONS);
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-    const data = await response.json();
-    hideSkeleton();
-    return data;
-  } catch (error) {
-    console.error("검색 데이터 로드 실패:", error);
-    hideSkeleton();
-    throw error;
-  }
+  const fragment = document.createDocumentFragment();
+  fragment.append(...Array.from({ length: count }).map(SkeletonMovieItem));
+  container.appendChild(fragment);
 };
 const MovieItem = ({ src, rate, title }) => {
   const movieItem = createElement(
@@ -167,29 +164,6 @@ const MovieItem = ({ src, rate, title }) => {
   $(".item-desc", movieItem).prepend(Rate({ rate }));
   return movieItem;
 };
-const loadMovies = async (movies) => {
-  movies.results.forEach((movie) => {
-    const posterPath = movie.poster_path;
-    const movieElement = MovieItem({
-      src: posterPath ? `https://image.tmdb.org/t/p/w440_and_h660_face/${movie.poster_path}` : "./images/default_poster.png",
-      title: movie.title,
-      rate: movie.vote_average
-    });
-    $(".thumbnail-list").appendChild(movieElement);
-  });
-  if (movies.page === movies.total_pages)
-    $(".load-more").classList.add("hidden");
-};
-const LoadMoreButton = ({ loadFn }) => {
-  let currentPage2 = 1;
-  const loadMoreButton = Button({ text: "더보기", className: ["load-more"] });
-  loadMoreButton.addEventListener("click", async () => {
-    currentPage2++;
-    const movies = await loadFn(currentPage2);
-    loadMovies(movies);
-  });
-  return loadMoreButton;
-};
 const NoSearchResults = (text) => {
   return createElement(
     /*html*/
@@ -200,6 +174,48 @@ const NoSearchResults = (text) => {
     </div>  
   `
   );
+};
+const MovieList = (movies) => {
+  if ((movies == null ? void 0 : movies.results.length) === 0) {
+    $(".thumbnail-list").before(NoSearchResults("검색 결과가 없습니다."));
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  movies == null ? void 0 : movies.results.forEach((movie) => {
+    const posterPath = movie.poster_path;
+    const movieElement = MovieItem({
+      src: posterPath ? `https://image.tmdb.org/t/p/w440_and_h660_face/${movie.poster_path}` : "./images/default_poster.png",
+      title: movie.title,
+      rate: movie.vote_average
+    });
+    fragment.appendChild(movieElement);
+  });
+  $(".thumbnail-list").appendChild(fragment);
+  if (movies.page === movies.total_pages)
+    $(".load-more").classList.add("hidden");
+  return fragment;
+};
+const LoadMoreButton = ({ loadFn }) => {
+  let currentPage2 = 1;
+  const loadMoreButton = Button({
+    text: "더보기",
+    className: ["load-more"],
+    onClick: async () => {
+      showSkeleton();
+      const movies = await loadFn(currentPage2);
+      if (movies.status === "fail") {
+        $("#wrapper").appendChild(
+          NoSearchResults("영화 목록을 가져오지 못했습니다.")
+        );
+      }
+      if (movies.status === "success") {
+        currentPage2++;
+        MovieList(movies.data);
+      }
+      hideSkeleton();
+    }
+  });
+  return loadMoreButton;
 };
 const SearchBar = () => {
   const searchBar = document.createElement("div");
@@ -223,28 +239,29 @@ const SearchBar = () => {
   return searchBar;
 };
 const searchMovie = async (input) => {
-  $(".thumbnail-list").replaceChildren();
-  $(".load-more").remove();
+  var _a;
+  const thumbnailList = $(".thumbnail-list");
+  thumbnailList.replaceChildren();
+  (_a = $(".load-more")) == null ? void 0 : _a.remove();
   $("#caption").innerText = `"${input}" 검색 결과`;
-  try {
-    const movies = await fetchSearchMovieList(input, 1);
+  showSkeleton();
+  const movies = await fetchSearchMovieList(input, 1);
+  if (movies.status === "fail") {
+    thumbnailList.appendChild(
+      NoSearchResults("영화 목록을 가져오지 못했습니다.")
+    );
+  }
+  if (movies.status === "success") {
     $(".top-rated-container").classList.add("hidden");
     $(".overlay-img").classList.add("hidden");
-    if (movies.results.length === 0) {
-      $(".thumbnail-list").after(NoSearchResults("검색 결과가 없습니다."));
-      return;
-    }
-    loadMovies(movies);
-    $(".thumbnail-list").after(
+    MovieList(movies.data);
+    thumbnailList.after(
       LoadMoreButton({
         loadFn: (currentPage2) => fetchSearchMovieList(input, currentPage2)
       })
     );
-  } catch (error) {
-    $(".thumbnail-list").after(
-      NoSearchResults("영화 목록을 가져오는 데 실패했습니다.")
-    );
   }
+  hideSkeleton();
 };
 const Header = ({ title, imageUrl, voteAverage }) => {
   const header = createElement(
@@ -275,23 +292,27 @@ const Header = ({ title, imageUrl, voteAverage }) => {
   const rate = Rate({ rate: voteAverage, className: ["rate-value"] });
   const button = Button({
     text: "자세히 보기",
-    className: ["primary", "detail"]
+    className: ["primary", "detail"],
+    onClick: () => {
+    }
   });
-  if (!rate) return;
-  const logoSearchContainer = $(".logo-search-container", header);
+  const [logoSearchContainer, topRateMovie, logo] = $multiSelect(
+    ".logo-search-container .top-rated-movie .logo",
+    header
+  );
   logoSearchContainer.appendChild(searchBar);
-  const topRateMovie = $(".top-rated-movie", header);
   topRateMovie.prepend(rate);
   topRateMovie.appendChild(button);
-  const logo = $(".logo", header);
   logo.addEventListener("click", () => location.reload());
   return header;
 };
 const Caption = ({ title }) => {
-  const caption = document.createElement("h2");
-  caption.setAttribute("id", "caption");
-  caption.innerText = title;
-  return caption;
+  return createElement(
+    /*html*/
+    `
+    <h2 id="caption">${title}</h2>  
+  `
+  );
 };
 let currentPage = 1;
 const movieList = document.createElement("ul");
@@ -301,21 +322,19 @@ wrapper.setAttribute("id", "wrap");
 addEventListener("load", async () => {
   const app = $("#app");
   const header = Header({ title: "로딩중 ...", imageUrl: "", voteAverage: 0 });
-  if (!header) return;
   const footer = Footer();
   if (app) {
     app.appendChild(wrapper);
     wrapper.appendChild(header);
     wrapper.appendChild(Caption({ title: "지금 인기 있는 영화" }));
     wrapper.appendChild(movieList);
-    for (let i = 0; i < 20; i++) {
-      const skeletonItem = SkeletonMovieItem();
-      movieList.appendChild(skeletonItem);
+    showSkeleton();
+    const movies = await fetchPopularMovieList(currentPage);
+    if (movies.status === "fail") {
+      wrapper.appendChild(NoSearchResults("영화 목록을 가져오지 못했습니다."));
     }
-    wrapper.appendChild(movieList);
-    try {
-      const movies = await fetchPopularMovieList(currentPage);
-      const topMovie = movies.results[0];
+    if (movies.status === "success") {
+      const topMovie = movies.data.results[0];
       if (topMovie) {
         const updatedHeader = Header({
           title: topMovie.title,
@@ -324,15 +343,14 @@ addEventListener("load", async () => {
         });
         if (updatedHeader) wrapper.replaceChild(updatedHeader, header);
       }
-      loadMovies(movies);
+      MovieList(movies.data);
       wrapper.appendChild(
         LoadMoreButton({
           loadFn: fetchPopularMovieList
         })
       );
-    } catch (error) {
-      wrapper.appendChild(NoSearchResults("영화 목록을 가져오지 못했습니다."));
     }
+    hideSkeleton();
     app.appendChild(footer);
   }
 });
