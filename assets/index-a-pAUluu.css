@@ -46,7 +46,6 @@ button.primary {
   border-radius: 4px;
 }
 #wrap {
-  /* min-width: 1440px; */
   background-color: var(--color-bluegray-100);
   min-height: calc(100vh - 180px);
 }
@@ -75,15 +74,14 @@ button.primary {
   justify-content: center;
   align-items: center;
   overflow: hidden;
-
 }
 .overlay img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.backdrop{
-  background-color: rgba(0,0,0,0.5);
+.backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
   position: absolute;
   top: 0;
   left: 0;
@@ -106,7 +104,7 @@ button.primary {
 .top-header {
   display: flex;
   align-items: center;
-  justify-content: center; 
+  justify-content: center;
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -128,7 +126,18 @@ h1.logo {
   position: absolute;
   left: 0;
   z-index: 3;
-  cursor:pointer;
+  cursor: pointer;
+}
+@media (max-width: 768px) {
+  .logo-search-container {
+    flex-direction: column;
+  }
+  h1.logo {
+    position: relative;
+  }
+  .search-bar {
+    width: 100%;
+  }
 }
 .search-bar {
   flex: 1;
@@ -157,7 +166,7 @@ h1.logo {
   cursor: pointer;
   font-size: 20px;
   color: white;
-  padding: 10px
+  padding: 10px;
 }
 .rate {
   display: flex;
@@ -177,19 +186,7 @@ span.rate-value {
   font-size: 3rem;
   font-weight: bold;
 }
-.load-more{ 
-  background-color: var(--color-lightblue-90);
-  width:1280px;
-  height:50px;
-
-  color: var(--color-white);
-  font-weight: bold;
-  font-size:24px;
-
-  margin:0 auto 56px;
-  border-radius: 4px;
-}
-.hidden{
+.hidden {
   display: none;
 }
 footer.footer {
@@ -211,29 +208,33 @@ footer.footer p:not(:last-child) {
   border-radius: 4px;
 }
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 .thumbnail.skeleton-box {
   width: 200px;
   height: 300px;
-  margin-bottom:10px;
+  margin-bottom: 10px;
 }
 .item-desc.skeleton-box {
   width: 200px;
   height: 24px;
 }
-.no-result{
-  display:flex;
+.no-result {
+  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
-.no-result img{
-  width:72px;
+.no-result img {
+  width: 72px;
 }
-.no-result h1{
-  font-size:3rem;
+.no-result h1 {
+  font-size: 3rem;
   font-weight: bold;
 }
 /* modal.css */
@@ -254,9 +255,12 @@ body.modal-open {
   z-index: 10;
   visibility: hidden; /* 모달이 기본적으로 보이지 않도록 설정 */
   opacity: 0;
-  transition:
-    opacity 0.3s ease,
-    visibility 0.3s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+@media (max-width: 768px) {
+  .modal-background {
+    align-items: end;
+  }
 }
 .modal-background.active {
   visibility: visible;
@@ -296,6 +300,59 @@ body.modal-open {
   margin-left: 16px;
   line-height: 1.6rem;
 }
+@media (max-width: 768px) {
+  .modal-container {
+    flex-direction: column;
+    align-items: center;
+  }
+  .modal-image img {
+    width: 200px;
+  }
+  .main-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+  }
+}
+.modal-description .average_rate {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.modal-description .intro {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 20px 0;
+}
+.modal-description .average_rate .rate {
+  font-size: 24px;
+  font-weight: bold;
+}
+.modal-description .my_rate {
+  font-size: 24px;
+  font-weight: bold;
+}
+.modal-description .star-rating {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.modal-description .description-score {
+  display: flex;
+  gap: 5px;
+}
+@media (max-width: 479px) {
+  .modal-description .star-rating {
+    flex-direction: column;
+  }
+  .modal-description .intro {
+    text-align: center;
+  }
+  .modal-image img {
+    display: none;
+  }
+}
 .modal-description .rate > img {
   position: relative;
   top: 5px;
@@ -305,6 +362,7 @@ body.modal-open {
 }
 .modal-description h2 {
   font-size: 2rem;
+  font-weight: bold;
   margin: 0 0 8px;
 }
 .detail {
@@ -466,9 +524,11 @@ table {
   margin-right: 8px;
 }
 .thumbnail-list {
+  width: 100%;
   margin: 0 auto 56px;
   display: grid;
-  grid-template-columns: repeat(5, 200px);
+  grid-template-columns: repeat(auto-fill, minmax(200px, auto));
+  justify-items: center;
   gap: 70px;
 
   justify-content: center;
@@ -481,6 +541,9 @@ table {
 .item {
   user-select: none;
   cursor: pointer;
+}
+.item-desc {
+  width: 200px;
 }
 .item-desc > *:not(:last-child) {
   position: relative;
