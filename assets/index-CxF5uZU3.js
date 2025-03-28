@@ -278,25 +278,25 @@ const MovieDetailContent = ({
   $(".my_rate", content).appendChild(StarRating());
   return content;
 };
+const loadDetailMovie = async (id) => {
+  const movie = await fetchDetailMovie(id);
+  const { title, genres, vote_average, poster_path, overview, release_date } = movie.data;
+  const url = new URL(location.href);
+  url.search = new URLSearchParams(`movieID=${id}`).toString();
+  window.history.replaceState({}, "", url.toString());
+  $("#modalBackground").classList.add("active");
+  $(".modal").appendChild(
+    MovieDetailContent({
+      title,
+      genres,
+      vote_average,
+      poster_path,
+      overview,
+      release_date
+    })
+  );
+};
 const MovieItem = ({ id, src, rate, title }) => {
-  async function onClick() {
-    const movie = await fetchDetailMovie(id);
-    const { title: title2, genres, vote_average, poster_path, overview, release_date } = movie.data;
-    const url = new URL(location.href);
-    url.search = new URLSearchParams(`movieID=${id}`).toString();
-    window.history.replaceState({}, "", url.toString());
-    $("#modalBackground").classList.add("active");
-    $(".modal").appendChild(
-      MovieDetailContent({
-        title: title2,
-        genres,
-        vote_average,
-        poster_path,
-        overview,
-        release_date
-      })
-    );
-  }
   const movieItem = createElement(
     /*html*/
     `
@@ -313,7 +313,7 @@ const MovieItem = ({ id, src, rate, title }) => {
       </div>
     </li>
   `,
-    { click: onClick }
+    { click: () => loadDetailMovie(id) }
   );
   $(".item-desc", movieItem).prepend(Rate({ rate }));
   return movieItem;
@@ -462,7 +462,7 @@ const searchMovie = async (input) => {
   }
   hideSkeleton();
 };
-const Header = ({ title, imageUrl, voteAverage }) => {
+const Header = ({ id, title, imageUrl, voteAverage }) => {
   const header = createElement(
     /*html*/
     `
@@ -492,8 +492,7 @@ const Header = ({ title, imageUrl, voteAverage }) => {
   const button = Button({
     text: "자세히 보기",
     className: ["primary", "detail"],
-    onClick: () => {
-    }
+    onClick: () => loadDetailMovie(id)
   });
   const [logoSearchContainer, topRateMovie, logo] = $multiSelect(
     ".logo-search-container .top-rated-movie .logo",
@@ -528,7 +527,12 @@ addEventListener("load", async () => {
   }
 });
 function createLayout() {
-  const header = Header({ title: "로딩중 ...", imageUrl: "", voteAverage: 0 });
+  const header = Header({
+    id: 0,
+    title: "로딩중 ...",
+    imageUrl: "",
+    voteAverage: 0
+  });
   const movieList = createElement(
     /*html*/
     `<ul class="thumbnail-list"></ul>`
@@ -546,6 +550,7 @@ async function processMovies() {
   }
   const topMovie = movies.data.results[0];
   const updatedHeader = Header({
+    id: topMovie.id,
     title: topMovie.title,
     imageUrl: `https://image.tmdb.org/t/p/w500${topMovie.poster_path}`,
     voteAverage: topMovie.vote_average
