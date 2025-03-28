@@ -65,7 +65,7 @@ const fetchPopularMovieList = async (currentPage) => apiClient.get(
   `/movie/popular?include_adult=false&language=ko-KR&page=${currentPage}`
 );
 const saveRating = (movieId, score) => {
-  const existingData = JSON.parse(localStorage.getItem("ratings") || "") || [];
+  const existingData = JSON.parse(localStorage.getItem("ratings") || "[]") || [];
   const updatedData = existingData.filter(
     (item) => item.movieId !== movieId
   );
@@ -162,7 +162,7 @@ const fetchSearchMovieList = async (search, currentPage) => apiClient.get(
 const fetchDetailMovie = async (id) => apiClient.get(`/movie/${id}?language=ko-KR';`);
 const getRatings = (movieId) => {
   var _a;
-  const existingData = JSON.parse(localStorage.getItem("ratings") || "") || [];
+  const existingData = JSON.parse(localStorage.getItem("ratings") || "[]") || [];
   return ((_a = existingData.find(
     (item) => item.movieId === movieId
   )) == null ? void 0 : _a.score) || 0;
