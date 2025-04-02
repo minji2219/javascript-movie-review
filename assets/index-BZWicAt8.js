@@ -337,7 +337,10 @@ const NoSearchResults = (text) => {
 };
 const MovieList = (movies) => {
   var _a;
-  $(".thumbnail-list").before(NoSearchResults("검색 결과가 없습니다."));
+  if ((movies == null ? void 0 : movies.results.length) === 0) {
+    $(".thumbnail-list").before(NoSearchResults("검색 결과가 없습니다."));
+    return;
+  }
   const fragment = document.createDocumentFragment();
   movies == null ? void 0 : movies.results.forEach((movie) => {
     const posterPath = movie.poster_path;
