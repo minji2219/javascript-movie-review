@@ -106,11 +106,11 @@ const Modal = () => {
       click: closeModal
     }
   );
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModal();
+  document.addEventListener("keydown", (e2) => {
+    if (e2.key === "Escape") closeModal();
   });
   $("#closeModal", modal).addEventListener("click", closeModal);
-  $(".modal", modal).addEventListener("click", (e) => e.stopPropagation());
+  $(".modal", modal).addEventListener("click", (e2) => e2.stopPropagation());
   return modal;
 };
 function closeModal() {
@@ -123,6 +123,7 @@ function closeModal() {
   saveRating(movieId, score);
   $(".modal-container").remove();
   $("#modalBackground").classList.remove("active");
+  $("body").classList.remove("noscroll");
 }
 const Footer = () => {
   return createElement(
@@ -135,15 +136,20 @@ const Footer = () => {
     `
   );
 };
-const Button = ({ text, className, onClick }) => {
-  const button = createElement(
+const e = (n, ...t) => (...r) => {
+  const e2 = [...t, ...r];
+  return n(...e2);
+};
+const fetchSearchMovieList = async (search, currentPage) => apiClient.get(
+  `/search/movie?query=${search}&include_adult=false&language=ko-KR&page=${currentPage}`
+);
+const LoadMoreSection = () => {
+  return createElement(
     /*html*/
     `
-    <button class=${className.join(" ")}>${text}</button>
-  `,
-    { click: onClick }
+    <div class="load-more"></div>
+  `
   );
-  return button;
 };
 const Rate = ({ rate, className, filled = false }) => {
   return createElement(
@@ -156,9 +162,6 @@ const Rate = ({ rate, className, filled = false }) => {
     `
   );
 };
-const fetchSearchMovieList = async (search, currentPage) => apiClient.get(
-  `/search/movie?query=${search}&include_adult=false&language=ko-KR&page=${currentPage}`
-);
 const fetchDetailMovie = async (id) => apiClient.get(`/movie/${id}?language=ko-KR';`);
 const getRatings = (movieId) => {
   var _a;
@@ -206,31 +209,32 @@ const StarRating = () => {
     }
     star.classList.add("star");
     star.setAttribute("id", `star_${index + 1}`);
-    star.addEventListener("click", () => {
-      const stars = $$(".star-rating .star", startRating);
-      const fillStars = stars.filter(
-        (star2) => parseInt(star2.id.split("_")[1]) <= index + 1
-      );
-      const emptyStars = stars.filter(
-        (star2) => parseInt(star2.id.split("_")[1]) > index + 1
-      );
-      fillStars.forEach(
-        (star2) => star2.setAttribute("src", "./images/star_filled.png")
-      );
-      emptyStars.forEach(
-        (star2) => star2.setAttribute("src", "./images/star_empty.png")
-      );
-      Object.entries(RATE_DESCRIPTION).forEach(([, value]) => {
-        if (value.score === (index + 1) * 2) {
-          $(".description", startRating).innerText = value.description;
-        }
-      });
-      $(".check-score", startRating).innerText = ((index + 1) * 2).toString();
-    });
+    star.addEventListener("click", () => handleClick(startRating, index));
     $(".stars", startRating).appendChild(star);
   });
   return startRating;
 };
+function handleClick(startRating, index) {
+  const stars = $$(".star-rating .star", startRating);
+  const fillStars = stars.filter(
+    (star) => parseInt(star.id.split("_")[1]) <= index + 1
+  );
+  const emptyStars = stars.filter(
+    (star) => parseInt(star.id.split("_")[1]) > index + 1
+  );
+  fillStars.forEach(
+    (star) => star.setAttribute("src", "./images/star_filled.png")
+  );
+  emptyStars.forEach(
+    (star) => star.setAttribute("src", "./images/star_empty.png")
+  );
+  Object.entries(RATE_DESCRIPTION).forEach(([, value]) => {
+    if (value.score === (index + 1) * 2) {
+      $(".description", startRating).innerText = value.description;
+    }
+  });
+  $(".check-score", startRating).innerText = ((index + 1) * 2).toString();
+}
 const MovieDetailContent = ({
   title,
   genres,
@@ -279,12 +283,14 @@ const MovieDetailContent = ({
   return content;
 };
 const loadDetailMovie = async (id) => {
+  if ($("#modalBackground").classList.contains("active")) return;
+  $("#modalBackground").classList.add("active");
   const movie = await fetchDetailMovie(id);
   const { title, genres, vote_average, poster_path, overview, release_date } = movie.data;
   const url = new URL(location.href);
   url.search = new URLSearchParams(`movieID=${id}`).toString();
   window.history.replaceState({}, "", url.toString());
-  $("#modalBackground").classList.add("active");
+  $("body").classList.add("noscroll");
   $(".modal").appendChild(
     MovieDetailContent({
       title,
@@ -330,7 +336,9 @@ const NoSearchResults = (text) => {
   );
 };
 const MovieList = (movies) => {
+  var _a;
   if ((movies == null ? void 0 : movies.results.length) === 0) {
+    if ($(".no-result")) return;
     $(".thumbnail-list").before(NoSearchResults("검색 결과가 없습니다."));
     return;
   }
@@ -346,8 +354,8 @@ const MovieList = (movies) => {
     fragment.appendChild(movieElement);
   });
   $(".thumbnail-list").appendChild(fragment);
-  if (movies.page === movies.total_pages)
-    $(".load-more").classList.add("hidden");
+  if (movies.page === movies.total_pages && $(".load-more"))
+    (_a = $(".load-more")) == null ? void 0 : _a.classList.add("hidden");
   return fragment;
 };
 const hideSkeleton = () => {
@@ -390,7 +398,8 @@ const loadMoreMovies = async ({ loadFn }) => {
   }
   hideSkeleton();
 };
-const observeLoadMore = ({ currentPage, loadFn }) => {
+const observeLoadMore = ({ loadFn }) => {
+  let currentPage = 2;
   const listEnd = $(".load-more");
   const option = {
     root: null,
@@ -408,36 +417,7 @@ const observeLoadMore = ({ currentPage, loadFn }) => {
   const observer = new IntersectionObserver(onIntersect, option);
   observer.observe(listEnd);
 };
-const LoadMoreSection = () => {
-  return createElement(
-    /*html*/
-    `
-    <div class="load-more"></div>
-  `
-  );
-};
 const INITIAL_PAGE$1 = 1;
-const SearchBar = () => {
-  const searchBar = document.createElement("div");
-  searchBar.classList.add("search-bar");
-  const input = document.createElement("input");
-  input.setAttribute("placeholder", "검색어를 입력하세요");
-  input.type = "text";
-  searchBar.appendChild(input);
-  const button = document.createElement("button");
-  button.innerText = "🔎";
-  button.type = "button";
-  searchBar.appendChild(button);
-  button.addEventListener("click", () => {
-    searchMovie(input.value);
-  });
-  input.addEventListener("keydown", async (e) => {
-    if (e.key === "Enter") {
-      searchMovie(input.value);
-    }
-  });
-  return searchBar;
-};
 const searchMovie = async (input) => {
   var _a;
   const thumbnailList = $(".thumbnail-list");
@@ -453,14 +433,45 @@ const searchMovie = async (input) => {
     $(".top-rated-container").classList.add("hidden");
     $(".overlay-img").classList.add("hidden");
     MovieList(movies.data);
+    hideSkeleton();
+    if (movies.data.page === movies.data.total_pages) return;
     thumbnailList.after(LoadMoreSection());
-    let currentPage = 2;
+    const loadFn = e(fetchSearchMovieList, input);
     observeLoadMore({
-      currentPage,
-      loadFn: (currentPage2) => fetchSearchMovieList(input, currentPage2)
+      loadFn
     });
   }
-  hideSkeleton();
+};
+const Button = ({ text, className, onClick }) => {
+  const button = createElement(
+    /*html*/
+    `
+    <button class=${className.join(" ")}>${text}</button>
+  `,
+    { click: onClick }
+  );
+  return button;
+};
+const SearchBar = ({ handleSearch }) => {
+  const searchBar = document.createElement("div");
+  searchBar.classList.add("search-bar");
+  const input = document.createElement("input");
+  input.setAttribute("placeholder", "검색어를 입력하세요");
+  input.type = "text";
+  searchBar.appendChild(input);
+  const button = document.createElement("button");
+  button.innerText = "🔎";
+  button.type = "button";
+  searchBar.appendChild(button);
+  button.addEventListener("click", () => {
+    handleSearch(input.value);
+  });
+  input.addEventListener("keydown", async (e2) => {
+    if (e2.key === "Enter") {
+      handleSearch(input.value);
+    }
+  });
+  return searchBar;
 };
 const Header = ({ id, title, imageUrl, voteAverage }) => {
   const header = createElement(
@@ -487,7 +498,7 @@ const Header = ({ id, title, imageUrl, voteAverage }) => {
     </header>
   `
   );
-  const searchBar = SearchBar();
+  const searchBar = SearchBar({ handleSearch: searchMovie });
   const rate = Rate({ rate: voteAverage, className: ["rate-value"] });
   const button = Button({
     text: "자세히 보기",
@@ -523,6 +534,11 @@ addEventListener("load", async () => {
     wrapper.appendChild(movieList);
     processMovies();
     app.appendChild(Modal());
+    const url = new URL(location.href);
+    const movieId = url.searchParams.get("movieID");
+    if (movieId) {
+      loadDetailMovie(parseInt(movieId));
+    }
     app.appendChild(footer);
   }
 });
@@ -559,6 +575,5 @@ async function processMovies() {
   MovieList(movies.data);
   wrapper.appendChild(LoadMoreSection());
   hideSkeleton();
-  let currentPage = 2;
-  observeLoadMore({ currentPage, loadFn: fetchPopularMovieList });
+  observeLoadMore({ loadFn: fetchPopularMovieList });
 }
