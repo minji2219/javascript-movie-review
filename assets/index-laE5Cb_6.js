@@ -354,7 +354,7 @@ const MovieList = (movies) => {
     fragment.appendChild(movieElement);
   });
   $(".thumbnail-list").appendChild(fragment);
-  if (movies.page === movies.total_pages && $(".load-more"))
+  if (movies.page === movies.total_pages)
     (_a = $(".load-more")) == null ? void 0 : _a.classList.add("hidden");
   return fragment;
 };
