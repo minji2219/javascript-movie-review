@@ -337,11 +337,7 @@ const NoSearchResults = (text) => {
 };
 const MovieList = (movies) => {
   var _a;
-  if ((movies == null ? void 0 : movies.results.length) === 0) {
-    if ($(".no-result")) return;
-    $(".thumbnail-list").before(NoSearchResults("검색 결과가 없습니다."));
-    return;
-  }
+  $(".thumbnail-list").before(NoSearchResults("검색 결과가 없습니다."));
   const fragment = document.createDocumentFragment();
   movies == null ? void 0 : movies.results.forEach((movie) => {
     const posterPath = movie.poster_path;
@@ -419,10 +415,11 @@ const observeLoadMore = ({ loadFn }) => {
 };
 const INITIAL_PAGE$1 = 1;
 const searchMovie = async (input) => {
-  var _a;
+  var _a, _b;
   const thumbnailList = $(".thumbnail-list");
   thumbnailList.replaceChildren();
-  (_a = $(".load-more")) == null ? void 0 : _a.remove();
+  (_a = $(".no-result")) == null ? void 0 : _a.remove();
+  (_b = $(".load-more")) == null ? void 0 : _b.remove();
   $("#caption").innerText = `"${input}" 검색 결과`;
   showSkeleton();
   const movies = await fetchSearchMovieList(input, INITIAL_PAGE$1);
